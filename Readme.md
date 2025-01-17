@@ -45,9 +45,14 @@ pip install -r requirements.txt
 ```
 
 ### 5. Update values in config.json file
+- rename the config.json.example to config.json
+- add missing openai configuration values
+
+### 6. Run the app
 ```bash
-pip install -r requirements.txt
+python aichatbot.py
 ```
+- Go to http://127.0.0.1:7860
 
 **Development Best Practices**
 - Always use virtual environment
