@@ -25,35 +25,6 @@ def main():
 
     # print(response.model_dump_json(indent=2))
     print(response.choices[0].message.content)
-    # print("Chat with AI (type 'quit' to exit)")
-    # print("---------------------------------")
-
-    # while True:
-    #     # Get user input
-    #     user_input = input("You: ")
-        
-    #     # Check if user wants to quit
-    #     if user_input.lower() == 'quit':
-    #         print("Goodbye!")
-    #         break
-
-    #     try:
-    #         # Create chat completion
-    #         response = openai.chat.completions.create(
-    #             model=config.deployment_name,
-    #             messages=[
-    #                 {"role": "user", "content": user_input}
-    #             ],
-    #             temperature=0.7,
-    #             max_tokens=800
-    #         )
-
-    #         # Print the response
-    #         print("\nAI:", response.choices[0].message.content)
-    #         print()
-
-    #     except Exception as e:
-    #         print(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
