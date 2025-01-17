@@ -1,6 +1,6 @@
 import os
 import gradio as gr
-import openai
+from openai import AzureOpenAI
 from typing import List, Dict
 import json
 from config import Config
@@ -13,10 +13,11 @@ class Chatbot:
         self.initialize_conversation()
 
     def setup_azure_openai(self):
-        openai.api_type = self.config.api_type
-        openai.api_base = self.config.api_base
-        openai.api_version = self.config.api_version
-        openai.api_key = self.config.api_key
+        self.client = AzureOpenAI(
+        api_key = self.config.api_key,  
+        api_version = self.config.api_version,
+        azure_endpoint = self.config.api_base
+        )
 
     def initialize_conversation(self):
         self.conversation_history = [
@@ -29,8 +30,8 @@ class Chatbot:
             self.conversation_history.append({"role": "user", "content": user_input})
 
             # Get response from Azure OpenAI
-            response = openai.ChatCompletion.create(
-                engine=self.config.deployment_name,
+            response = self.client.chat.completions.create(
+                model=self.config.deployment_name,
                 messages=self.conversation_history,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
