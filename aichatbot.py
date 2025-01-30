@@ -71,6 +71,18 @@ class Chatbot:
             )
             self.embeddings[row['id']] = response['data']['embedding']
 
+    def find_closest_embedding(self, input_embedding):
+        """Find the closest embedding in the stored embeddings using cosine similarity."""
+        from scipy.spatial import distance
+        closest_id = None
+        min_distance = float('inf')
+        for id, embedding in self.embeddings.items():
+            dist = distance.cosine(input_embedding, embedding)
+            if dist < min_distance:
+                min_distance = dist
+                closest_id = id
+        return closest_id
+
     def clear_conversation(self):
         self.initialize_conversation()
         return "", ""
