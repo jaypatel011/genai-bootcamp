@@ -97,10 +97,14 @@ def create_gradio_interface(chatbot: Chatbot):
     return interface
 
 def main():
-    # Example usage of loading embeddings
-    chatbot.load_embeddings_from_csv('path_to_your_csv.csv')
     # Load configuration
     config = Config("config.json")
+    
+    # Create chatbot instance
+    chatbot = Chatbot(config)
+    
+    # Example usage of loading embeddings
+    chatbot.load_embeddings_from_csv('path_to_your_csv.csv')
     
     # Create chatbot instance
     chatbot = Chatbot(config)
