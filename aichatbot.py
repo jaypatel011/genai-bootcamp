@@ -4,6 +4,7 @@ from openai import AzureOpenAI
 from typing import List, Dict
 import json
 from config import Config
+from sentence_transformers import SentenceTransformer
 
 class Chatbot:
     def __init__(self, config: Config):
@@ -29,10 +30,14 @@ class Chatbot:
             # Add user message to conversation history
             self.conversation_history.append({"role": "user", "content": user_input})
 
-            # Get response from Azure OpenAI
+            # Generate embeddings for user input
+            model = SentenceTransformer('all-MiniLM-L6-v2')
+            user_input_embedding = model.encode(user_input)
+
+            # Get response from Azure OpenAI using embeddings
             response = self.client.chat.completions.create(
                 model=self.config.deployment_name,
-                messages=self.conversation_history,
+                messages=self.conversation_history + [{"role": "embedding", "content": user_input_embedding.tolist()}],
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
             )
