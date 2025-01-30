@@ -33,7 +33,7 @@ class Chatbot:
 
             # Generate embeddings for user input using AzureOpenAI
             response = self.client.embeddings.create(
-                model="text-embedding-ada-002",
+                model="text-embedding-3-small",
                 input=user_input
             )
             user_input_embedding = response['data']['embedding']
@@ -66,7 +66,7 @@ class Chatbot:
         for index, row in data.iterrows():
             # Generate embeddings using AzureOpenAI
             response = self.client.embeddings.create(
-                model="text-embedding-ada-002",
+                model="text-embedding-3-small",
                 input=row['text']
             )
             self.embeddings[row['id']] = response['data']['embedding']
