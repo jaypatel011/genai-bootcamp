@@ -31,11 +31,14 @@ class Chatbot:
             # Add user message to conversation history
             self.conversation_history.append({"role": "user", "content": user_input})
 
-            # Generate embeddings for user input
-            model = SentenceTransformer('all-MiniLM-L6-v2')
-            user_input_embedding = model.encode(user_input)
+            # Generate embeddings for user input using AzureOpenAI
+            response = self.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=user_input
+            )
+            user_input_embedding = response['data']['embedding']
 
-            # Search embeddings and provide to LLM as context
+            # Perform semantic search to find the closest embedding
             closest_embedding_id = self.find_closest_embedding(user_input_embedding)
             context_embedding = self.embeddings.get(closest_embedding_id, [])
 
@@ -60,9 +63,13 @@ class Chatbot:
         """Load data from a CSV file and generate embeddings."""
         data = pd.read_csv(csv_file)
         self.embeddings = {}
-        model = SentenceTransformer('all-MiniLM-L6-v2')
         for index, row in data.iterrows():
-            self.embeddings[row['id']] = model.encode(row['text'])
+            # Generate embeddings using AzureOpenAI
+            response = self.client.embeddings.create(
+                model="text-embedding-ada-002",
+                input=row['text']
+            )
+            self.embeddings[row['id']] = response['data']['embedding']
 
     def clear_conversation(self):
         self.initialize_conversation()
