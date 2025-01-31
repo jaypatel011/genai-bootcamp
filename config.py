@@ -16,6 +16,11 @@ class Config:
             self.api_key = config.get("api_key", "")
             self.deployment_name = config.get("deployment_name", "")
             
+            self.embedding_api_base = config.get("embedding_api_base", "")
+            self.embedding_api_version = config.get("embedding_api_version", "2023-05-15")
+            self.embedding_api_key = config.get("embedding_api_key", "")
+            self.embedding_deployment_name = config.get("embedding_deployment_name", "")
+            
             # Chat settings
             self.temperature = config.get("temperature", 0.7)
             self.max_tokens = config.get("max_tokens", 800)
@@ -39,6 +44,10 @@ class Config:
         self.api_version = "2023-05-15"
         self.api_key = ""
         self.deployment_name = ""
+        self.embedding_api_base = ""
+        self.embedding_api_version = "2023-05-15"
+        self.embedding_api_key = ""
+        self.embedding_deployment_name = ""
         self.temperature = 0.7
         self.max_tokens = 800
         self.system_message = "You are a helpful assistant that provides accurate and concise responses."

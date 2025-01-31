@@ -3,9 +3,11 @@ import gradio as gr
 from openai import AzureOpenAI
 from typing import List, Dict
 import json
+import ast
 from config import Config
-from sentence_transformers import SentenceTransformer
+from scipy.spatial import distance
 import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
 
 class Chatbot:
     def __init__(self, config: Config):
@@ -13,6 +15,7 @@ class Chatbot:
         self.setup_azure_openai()
         self.conversation_history: List[Dict] = []
         self.initialize_conversation()
+        self.load_embeddings_from_csv('faqs_embeddings.csv')
 
     def setup_azure_openai(self):
         self.client = AzureOpenAI(
@@ -20,6 +23,14 @@ class Chatbot:
         api_version = self.config.api_version,
         azure_endpoint = self.config.api_base
         )
+        
+        self.embeddingsClient = AzureOpenAI(
+        api_key = self.config.embedding_api_key,  
+        api_version = self.config.embedding_api_version,
+        azure_endpoint = self.config.embedding_api_base
+        )
+        
+        
 
     def initialize_conversation(self):
         self.conversation_history = [
@@ -28,24 +39,19 @@ class Chatbot:
 
     def generate_response(self, user_input: str) -> str:
         try:
+            print(user_input)
+            context_df = self.retrieve_relevant_context(user_input, top_k=2)
+            print(context_df)
+            context = "\n".join([f"Q: {row.question}\nA: {row.answer}" for _, row in context_df.iterrows()])
+            self.conversation_history.append({"role": "system", "content": f"Answer using ONLY this context:\n{context}"})
+            
             # Add user message to conversation history
             self.conversation_history.append({"role": "user", "content": user_input})
-
-            # Generate embeddings for user input using AzureOpenAI
-            response = self.client.embeddings.create(
-                model="text-embedding-3-small",
-                input=user_input
-            )
-            user_input_embedding = response['data']['embedding']
-
-            # Perform semantic search to find the closest embedding
-            closest_embedding_id = self.find_closest_embedding(user_input_embedding)
-            context_embedding = self.embeddings.get(closest_embedding_id, [])
-
+            
             # Get response from Azure OpenAI using embeddings as context
             response = self.client.chat.completions.create(
                 model=self.config.deployment_name,
-                messages=self.conversation_history + [{"role": "embedding", "content": context_embedding}],
+                messages=self.conversation_history,
                 temperature=self.config.temperature,
                 max_tokens=self.config.max_tokens,
             )
@@ -59,29 +65,30 @@ class Chatbot:
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def load_embeddings_from_csv(self, csv_file: str):
-        """Load data from a CSV file and generate embeddings."""
-        data = pd.read_csv(csv_file)
-        self.embeddings = {}
-        for index, row in data.iterrows():
-            # Generate embeddings using AzureOpenAI
-            response = self.client.embeddings.create(
-                model="text-embedding-3-small",
-                input=row['text']
-            )
-            self.embeddings[row['id']] = response['data']['embedding']
+    def load_embeddings_from_csv(self, fileName):
+        # Load data and embeddings
+        self.df = pd.read_csv(fileName)
+        # Convert the string representation of embeddings back to lists of floats
+        self.df['embedding'] = self.df['embedding'].apply(ast.literal_eval)
 
-    def find_closest_embedding(self, input_embedding):
-        """Find the closest embedding in the stored embeddings using cosine similarity."""
-        from scipy.spatial import distance
-        closest_id = None
-        min_distance = float('inf')
-        for id, embedding in self.embeddings.items():
-            dist = distance.cosine(input_embedding, embedding)
-            if dist < min_distance:
-                min_distance = dist
-                closest_id = id
-        return closest_id
+    
+    def get_embedding(self, text):
+        response = self.embeddingsClient.embeddings.create(
+                model=self.config.embedding_deployment_name,
+                input=text,
+            )
+        return response.data[0].embedding
+
+    def retrieve_relevant_context(self, query, top_k=2):
+        # Get query embedding
+        query_embedding = self.get_embedding(query)
+        print(query_embedding)
+        # Calculate similarity scores
+        self.df["similarity"] = self.df["embedding"].apply(
+            lambda x: cosine_similarity([query_embedding], [x])[0][0]
+        )
+        # Return top matches
+        return self.df.sort_values("similarity", ascending=False).head(top_k)
 
     def clear_conversation(self):
         self.initialize_conversation()
@@ -118,12 +125,6 @@ def create_gradio_interface(chatbot: Chatbot):
 def main():
     # Load configuration
     config = Config("config.json")
-    
-    # Create chatbot instance
-    chatbot = Chatbot(config)
-    
-    # Example usage of loading embeddings
-    chatbot.load_embeddings_from_csv('path_to_your_csv.csv')
     
     # Create chatbot instance
     chatbot = Chatbot(config)

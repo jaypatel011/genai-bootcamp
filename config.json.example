@@ -16,5 +16,9 @@
         "What is artificial intelligence?",
         "How does machine learning work?",
         "Explain neural networks"
-    ]
+    ],
+    "embedding_api_base": "",
+    "embedding_api_key": "",
+    "embedding_api_version": "2023-05-15",
+    "embedding_deployment_name": "text-embedding-3-small"
 }
