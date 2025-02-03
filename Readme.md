@@ -50,7 +50,7 @@ pip install -r requirements.txt
 
 ### 6. Run the app
 ```bash
-python aichatbot.py
+streamlit run aichatbot.py
 ```
 - Go to http://127.0.0.1:7860
 
