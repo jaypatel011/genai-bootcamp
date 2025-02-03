@@ -2,3 +2,4 @@ config.json
 .aider*
 venv/
 .venv/
+aider-start.sh

@@ -9,6 +9,9 @@ from scipy.spatial import distance
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
 
+USER_AVATAR = "👤"
+BOT_AVATAR = "🤖"
+
 class Chatbot:
     def __init__(self, config: Config):
         self.config = config
@@ -39,9 +42,7 @@ class Chatbot:
 
     def generate_response(self, user_input: str) -> str:
         try:
-            print(user_input)
             context_df = self.retrieve_relevant_context(user_input, top_k=2)
-            print(context_df)
             context = "\n".join([f"Q: {row.question}\nA: {row.answer}" for _, row in context_df.iterrows()])
             self.conversation_history.append({"role": "system", "content": f"Answer using ONLY this context:\n{context}"})
             
@@ -82,7 +83,7 @@ class Chatbot:
     def retrieve_relevant_context(self, query, top_k=2):
         # Get query embedding
         query_embedding = self.get_embedding(query)
-        print(query_embedding)
+
         # Calculate similarity scores
         self.df["similarity"] = self.df["embedding"].apply(
             lambda x: cosine_similarity([query_embedding], [x])[0][0]
@@ -97,24 +98,53 @@ class Chatbot:
 def create_streamlit_interface(chatbot: Chatbot):
     st.title(chatbot.config.title)
     st.write(chatbot.config.description)
-
-    chat_history = st.empty()
-    user_input = st.text_input("Type your message here:", key="user_input")
-    if st.button("Send"):
-        if user_input.strip() != "":
-            response = chatbot.generate_response(user_input)
-            chat_history.write(f"You: {user_input}")
-            chat_history.write(f"Bot: {response}")
-
+    
+    # Store conversation history in session state
+    if "conversation_history" not in st.session_state:
+        st.session_state.conversation_history = []
+        
+    # Create a container for the chat history
+    with st.container():
+        display_conversation()
+    
+    st.text_input("You:", key="user_input", on_change=lambda: send_message(chatbot))
+    
     if st.button("Clear Conversation"):
         chatbot.clear_conversation()
-        chat_history.empty()
+        st.session_state.conversation_history = []  # Clear the session state history
+        st.session_state.last_input = ""  # Clear the last input (optional)
 
-    if chatbot.config.examples:
-        st.write("Example Queries:")
-        for example in chatbot.config.examples:
-            st.write(example)
-
+# Callback function for sending the message
+def send_message(chatbot: Chatbot):
+    user_input = st.session_state.user_input
+    if user_input:
+        # Add user input to conversation history
+        st.session_state.conversation_history.append({"role": "user", "content": user_input})
+        
+        # Get response from the chatbot
+        response = chatbot.generate_response(user_input)
+        
+        # Add assistant response to conversation history
+        st.session_state.conversation_history.append({"role": "assistant", "content": response})
+        
+        # Clear input after sending
+        st.session_state.user_input = ""  # Clear the last input
+          
+def display_conversation():
+    for chat in st.session_state.conversation_history:
+        if chat["role"] == "user":
+            # Right align user's message
+            st.markdown(
+                f"<div style='text-align: right;'><span style='font-size: 18px;'>{USER_AVATAR} {chat['content']}</span></div>",
+                unsafe_allow_html=True
+            )
+        elif chat["role"] == "assistant":
+            # Left align assistant's message
+            st.markdown(
+                f"<div style='text-align: left; margin-bottom:20px; color:#00FFFF;'><span style='font-size: 20px;'>{BOT_AVATAR} {chat['content']}</span></div>",
+                unsafe_allow_html=True
+            )
+            
 def main():
     # Load configuration
     config = Config("config.json")
@@ -124,7 +154,6 @@ def main():
     
     # Create and launch Gradio interface
     create_streamlit_interface(chatbot)
-    st.button("Launch")
 
 if __name__ == "__main__":
     main()

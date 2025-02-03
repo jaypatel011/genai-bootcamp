@@ -1,6 +1,6 @@
 # Azure OpenAI Chatbot
 
-A simple chatbot implementation using Azure OpenAI and Gradio interface.
+A simple chatbot implementation using Azure OpenAI and Streamlit interface.
 
 ## Prerequisites Installation
 
