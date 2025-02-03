@@ -1,5 +1,5 @@
 import os
-import gradio as gr
+import streamlit as st
 from openai import AzureOpenAI
 from typing import List, Dict
 import json
@@ -94,33 +94,26 @@ class Chatbot:
         self.initialize_conversation()
         return "", ""
 
-def create_gradio_interface(chatbot: Chatbot):
-    with gr.Blocks(theme=chatbot.config.theme, title=chatbot.config.title) as interface:
-        gr.Markdown(f"# {chatbot.config.title}")
-        gr.Markdown(chatbot.config.description)
+def create_streamlit_interface(chatbot: Chatbot):
+    st.title(chatbot.config.title)
+    st.write(chatbot.config.description)
 
-        chatbot_interface = gr.Chatbot()
-        msg = gr.Textbox(label="Type your message here...")
-        clear = gr.Button("Clear Conversation")
+    chat_history = st.empty()
+    user_input = st.text_input("Type your message here:", key="user_input")
+    if st.button("Send"):
+        if user_input.strip() != "":
+            response = chatbot.generate_response(user_input)
+            chat_history.write(f"You: {user_input}")
+            chat_history.write(f"Bot: {response}")
 
-        def user_message(message, history):
-            if message.strip() == "":
-                return "", history
-            
-            response = chatbot.generate_response(message)
-            history.append((message, response))
-            return "", history
+    if st.button("Clear Conversation"):
+        chatbot.clear_conversation()
+        chat_history.empty()
 
-        msg.submit(user_message, [msg, chatbot_interface], [msg, chatbot_interface])
-        clear.click(chatbot.clear_conversation, outputs=[msg, chatbot_interface])
-
-        if chatbot.config.examples:
-            gr.Examples(
-                examples=chatbot.config.examples,
-                inputs=msg
-            )
-
-    return interface
+    if chatbot.config.examples:
+        st.write("Example Queries:")
+        for example in chatbot.config.examples:
+            st.write(example)
 
 def main():
     # Load configuration
@@ -130,8 +123,8 @@ def main():
     chatbot = Chatbot(config)
     
     # Create and launch Gradio interface
-    interface = create_gradio_interface(chatbot)
-    interface.launch(share=True)
+    create_streamlit_interface(chatbot)
+    st.button("Launch")
 
 if __name__ == "__main__":
     main()
