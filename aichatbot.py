@@ -97,27 +97,15 @@ class Chatbot:
 
 def create_streamlit_interface(chatbot: Chatbot):
     st.title(chatbot.config.title)
-    st.write(chatbot.config.description)
+    st.subheader(chatbot.config.description)
     
     # Store conversation history in session state
     if "conversation_history" not in st.session_state:
         st.session_state.conversation_history = []
-        
-    # Create a container for the chat history
-    with st.container():
-        display_conversation()
     
-    st.text_input("You:", key="user_input", on_change=lambda: send_message(chatbot))
-    
-    if st.button("Clear Conversation"):
-        chatbot.clear_conversation()
-        st.session_state.conversation_history = []  # Clear the session state history
-        st.session_state.last_input = ""  # Clear the last input (optional)
-
-# Callback function for sending the message
-def send_message(chatbot: Chatbot):
-    user_input = st.session_state.user_input
+    user_input = st.chat_input("Type your message")
     if user_input:
+        print(user_input)
         # Add user input to conversation history
         st.session_state.conversation_history.append({"role": "user", "content": user_input})
         
@@ -127,23 +115,17 @@ def send_message(chatbot: Chatbot):
         # Add assistant response to conversation history
         st.session_state.conversation_history.append({"role": "assistant", "content": response})
         
-        # Clear input after sending
-        st.session_state.user_input = ""  # Clear the last input
+        # Create a container for the chat history
+        with st.container():
+            display_conversation()
+    
+    st.divider()
           
 def display_conversation():
+    print(st.session_state.conversation_history)
     for chat in st.session_state.conversation_history:
-        if chat["role"] == "user":
-            # Right align user's message
-            st.markdown(
-                f"<div style='text-align: right;'><span style='font-size: 18px;'>{USER_AVATAR} {chat['content']}</span></div>",
-                unsafe_allow_html=True
-            )
-        elif chat["role"] == "assistant":
-            # Left align assistant's message
-            st.markdown(
-                f"<div style='text-align: left; margin-bottom:20px; color:#00FFFF;'><span style='font-size: 20px;'>{BOT_AVATAR} {chat['content']}</span></div>",
-                unsafe_allow_html=True
-            )
+        with st.chat_message(chat["role"]):
+            st.markdown(f"{chat['content']}")
             
 def main():
     # Load configuration
